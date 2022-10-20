@@ -1,0 +1,43 @@
+
+
+$primary-bg: rgb(52, 60, 64);
+$primary-text: gray;
+
+$accent-bg: rgb(124,77,255);
+
+.ut-flex-h
+{
+	display: flex;
+	flex-direction: row;
+}
+
+.ut-flex-v
+{
+	display: flex;
+	flex-direction: column;
+}
+
+.ut-flex-align-center
+{
+	align-items: center;
+}
+
+.ut-flex-justify-center
+{
+	justify-content: center;
+}
+
+.ut-flex-child
+{
+	flex-grow: 1;
+}
+
+.root
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: $primary-bg;
+}
