@@ -1,0 +1,34 @@
+{
+  "commands":
+  {
+    "ESP":
+    [
+      "Capture"
+    ],
+    "ARD":
+    [
+      "Tare",
+      "ResetTare",
+      "Weight",
+      "Dispense",
+      "SetWheelPosition",
+      "SetSplitterPosition"
+    ]
+  },
+
+  "enums":
+  {
+    "WheelPosition":
+    [
+      "OPEN",
+      "CLOSE_LOOSER",
+      "CLOSE_LOOSE",
+      "CLOSE_TIGHT"
+    ],
+    "SplitterPosition":
+    [
+      "LEFT",
+      "RIGHT"
+    ]
+  }
+}

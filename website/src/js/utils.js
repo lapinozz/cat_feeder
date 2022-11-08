@@ -155,6 +155,10 @@ export function makeDiv(type, attributes)
         {
             value.appendChild(el);
         }
+        else if(attr == 'text')
+        {
+            el.textContent = value;
+        }
         else
         {
             el[attr] = value;

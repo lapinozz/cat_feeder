@@ -1,0 +1,135 @@
+
+$primary-bg: rgb(52, 60, 64);
+$primary-element-bg: rgb(42, 50, 54);
+$primary-text: #ddd;
+$primary-border: rgb(32, 40, 44);
+$primary-border-selected: rgb(37, 45, 49);
+
+$accent: rgb(124,77,255);
+$accent-dark: rgb(65, 44, 123);
+
+$margin-small: 0.25rem;
+$margin-medium: 0.5rem;
+$margin-big: 0.75rem;
+
+$radius-small: 3px;
+$radius-medium: 5px;
+$radius-big: 7px;
+
+.ut-flex
+{
+	display: flex;
+	padding: $margin-small;
+	position: relative;
+
+	&> *
+	{
+		margin: $margin-small;
+	}
+}
+
+.ut-flex-h
+{
+	flex-direction: row;
+	@extend .ut-flex;
+}
+
+.ut-flex-v
+{
+	flex-direction: column;
+	@extend .ut-flex;
+}
+
+.ut-flex-align-center
+{
+	align-items: center;
+}
+
+.ut-flex-justify-center
+{
+	justify-content: center;
+}
+
+.ut-flex-expand
+{
+	flex-grow: 1;
+}
+
+.ut-text-input-container
+{
+	@extend .ut-flex-h;
+
+	margin-left: 0;
+
+	.ut-label
+	{
+		margin-right: $margin-medium;
+
+		@extend .ut-flex-align-center;
+	}
+
+	input
+	{
+		@extend .ut-flex-align-center;
+	}
+
+	&.disabled
+	{
+		pointer-events: none;
+		filter: grayscale(1) brightness(0.8);
+	}
+}
+
+input, [contenteditable]
+{
+	color: $primary-text;
+	background: $primary-element-bg;
+	border-radius: $radius-medium;
+	border: $primary-border 2px solid;
+
+	&:focus
+	{
+		outline: none;
+		border-color: $accent;
+	}
+
+	&[type="button"]
+	{
+		cursor: pointer;
+		border-radius: 0;
+		background-color: $accent-dark;
+
+		&:focus
+		{
+			border-color: $primary-border;
+		}
+
+		&:hover
+		{
+			color: $primary-element-bg;
+			background-color: $primary-text;
+		}
+
+		&:active
+		{
+			filter: brightness(0.7);
+		}
+	}
+
+	&.disabled
+	{
+		pointer-events: none;
+		filter: grayscale(1) brightness(0.8);
+	}
+}
+
+.root
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	color: $primary-text;
+	background: $primary-bg;
+}

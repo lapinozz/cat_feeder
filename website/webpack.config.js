@@ -17,12 +17,12 @@ module.exports = {
       },
       {
       	test: /\.(png|jpe?g|gif|svg|ttf|ico)$/,
-	  	use: [{
-	      loader: 'file-loader',
-	      options: {
-	        outputPath: "assets"
-	      }
-	    }]
+  	  	use: [{
+  	      loader: 'file-loader',
+  	      options: {
+  	        outputPath: "assets"
+  	      }
+  	    }]
       }
     ]
   },

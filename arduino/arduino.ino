@@ -2,36 +2,24 @@
 #include <Servo.h> 
 #include <Stepper.h>
 
+#include "shared/shared.h"
+
 #include <SoftwareSerial.h>
 SoftwareSerial espSerial(2, 3); // RX, TX
 
 Stream* mainSerial = nullptr;
-
-enum WheelPosition
-{
-  OPEN,
-  CLOSE_LOOSER,
-  CLOSE_LOOSE,
-  CLOSE_TIGHT
-};
 
 constexpr int wheelServoPin = 6;
 constexpr int wheelOpenAngle = 55;
 constexpr int wheelCloseTightAngle = 160;
 constexpr int wheelCloseLooseAngle = wheelCloseTightAngle - 7;
 constexpr int wheelCloseLooserAngle = wheelCloseLooseAngle - 7;
-constexpr int wheelAngles[] = {wheelOpenAngle, wheelCloseLooserAngle, wheelCloseLooseAngle, wheelCloseTightAngle};
-
-enum SplitterPosition
-{
-  LEFT,
-  RIGHT
-};
+constexpr int wheelAngles[WheelPosition::_COUNT] = {wheelOpenAngle, wheelCloseLooserAngle, wheelCloseLooseAngle, wheelCloseTightAngle};
 
 constexpr int splitterServoPin = 7;
 constexpr int splitterLeftAngle = 0;
 constexpr int splitterRightAngle = 130;
-constexpr int splitterAngles[] = {splitterLeftAngle, splitterRightAngle};
+constexpr int splitterAngles[SplitterPosition::_COUNT] = {splitterLeftAngle, splitterRightAngle};
 
 constexpr int splitterLeftMaxWeight = 0;
 
@@ -63,7 +51,7 @@ void setSplitterPosition(SplitterPosition pos, int delayTime = 500)
     servo.detach();
 }
 
-void updateScale(bool tare = false)
+bool updateScale(bool tare = false)
 {
     if (scale.is_ready())
     {
@@ -93,11 +81,11 @@ void updateScale(bool tare = false)
         //delay(2000);
         lastScaleValue = scale.get_units(1);
       }
-    } 
-    else
-    {
-      mainSerial->println("HX711 not found.");
+
+      return true;
     }
+
+    return false;
 }
 
 void dispense(int turns = 10)
@@ -179,8 +167,18 @@ void setup() {
   }
 }
 
+bool waitForInput()
+{
+  while(mainSerial->available() <= 0)
+  {
+  }
+
+  return true;
+}
+
 bool expectComma()
 {
+  waitForInput();
   if(mainSerial->peek() == ',')
   {
     mainSerial->read();
@@ -190,14 +188,18 @@ bool expectComma()
   return false;
 }
 
-bool expectInt(long& ret)
+bool expectInt(long& ret, bool trash = true)
 {
-  while(mainSerial->available() > 0 && !isDigit(mainSerial->peek()))
+  if(trash)
   {
-    mainSerial->read();
+    while(waitForInput() && !isDigit(mainSerial->peek()))
+    {
+      mainSerial->read();
+    }
   }
   
-  if(mainSerial->available() <= 0)
+  waitForInput();
+  if(!isDigit(mainSerial->peek()))
   {
     return false;
   }
@@ -219,39 +221,57 @@ void parseCommands()
   {
     return;
   }
+
+  bool success = true;
   
-  if(c == 1)
+  if(c == Commands::ARD_SetWheelPosition)
   {
-    setWheelPosition(WheelPosition::CLOSE_TIGHT);
+    WheelPosition pos = WheelPosition::OPEN;
+
+    if(expectComma())
+    {
+      long ret;
+      if(expectInt(ret))
+      {
+        pos = static_cast<WheelPosition>(ret);
+      }
+    }
+    
+    setWheelPosition(pos);
   }
-  else if(c == 2)
+  else if(c == Commands::ARD_SetSplitterPositio)
   {
-    setWheelPosition(WheelPosition::OPEN);
+    SplitterPosition pos = SplitterPosition::LEFT;
+
+    if(expectComma())
+    {
+      long ret;
+      if(expectInt(ret))
+      {
+        pos = static_cast<SplitterPosition>(ret);
+      }
+    }
+    
+    setSplitterPosition(pos);
   }
-  else if(c == 3)
-  {
-    servo.attach(splitterServoPin);
-    servo.write(splitterLeftAngle);
-    delay(500);
-    servo.detach();
-  }
-  else if(c == 4)
-  {
-    servo.attach(splitterServoPin);
-    servo.write(splitterRightAngle);
-    delay(500);
-    servo.detach();
-  }
-  else if(c == 5)
+  else if(c == Commands::ARD_Weight)
   {
     updateScale();
     mainSerial->println(lastScaleValue, 5);
   }
-  else if(c == 6)
+  else if(c == Commands::ARD_Tare)
+  {
+    updateScale(true);
+  }
+  else if(c == Commands::ARD_ResetTare)
+  {
+    scale.set_scale();
+  }
+  else if(c == Commands::ARD_Dispense)
   {
     dispense();
   }
-  else if(c == 7)
+  else if(c == -1)
   {
     if (scale.is_ready())
     {
@@ -271,18 +291,6 @@ void parseCommands()
       mainSerial->println("HX711 not found.");
     }
     delay(1000);
-  }
-  else if(c == 8)
-  {
-    setWheelPosition(WheelPosition::CLOSE_LOOSE);
-  }
-  else if(c == 9)
-  {
-    setWheelPosition(WheelPosition::CLOSE_LOOSER);
-  }
-  else if(c == 10)
-  {
-    updateScale(true);
   }
   else if(c == 11)
   {

@@ -1,43 +1,20 @@
+@import 'theme';
 
-
-$primary-bg: rgb(52, 60, 64);
-$primary-text: gray;
-
-$accent-bg: rgb(124,77,255);
-
-.ut-flex-h
+.camera-img
 {
-	display: flex;
-	flex-direction: row;
+	max-width: 40vw;
+	border: 2px gray solid;
+	border-radius: 2px;
 }
 
-.ut-flex-v
+.log
 {
-	display: flex;
-	flex-direction: column;
+	padding: 2px;  
+	overflow: auto;
+  	overflow-y: auto;
 }
 
-.ut-flex-align-center
+.connect
 {
-	align-items: center;
-}
-
-.ut-flex-justify-center
-{
-	justify-content: center;
-}
-
-.ut-flex-child
-{
-	flex-grow: 1;
-}
-
-.root
-{
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: $primary-bg;
+	margin-left: auto;
 }
