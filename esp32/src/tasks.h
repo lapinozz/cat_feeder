@@ -1,6 +1,20 @@
 struct Task {
   Commands cmd;
-  int args[1];
+
+  static constexpr uint8_t MaxArgCount = 3;
+
+  uint8_t argCount = 0;
+  int args[MaxArgCount] = {};
+
+  Task()
+  {
+
+  }
+
+  template<typename...Args>
+  Task(Commands c, Args...args) : cmd(c), argCount(sizeof...(args)), args{args...}
+  {
+  }
 };
 
 SemaphoreHandle_t tasksSemaphore = NULL;

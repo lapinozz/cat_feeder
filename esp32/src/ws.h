@@ -1,7 +1,12 @@
+#include "AsyncTCP.h">
+
 AsyncWebSocket ws("/ws/" __SECRET__);
 
 using WsMsgCallback = void (*)(uint32_t, const char*);
-WsMsgCallback wsMsgCallback;
+WsMsgCallback wsMsgCallback = nullptr;
+
+using WsConnectCallback = void (*)(uint32_t);
+WsConnectCallback wsConnectCallback = nullptr;
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
@@ -9,6 +14,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
   {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      client->client()->setRxTimeout(5);
+      client->keepAlivePeriod(1);
+      wsConnectCallback(client->id());
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -19,6 +27,11 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
       if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
       {
         data[len] = 0;
+        if(strcmp((const char*)data, "ping") == 0)
+        {
+          break;
+        }
+
         wsMsgCallback(client->id(), (const char*)data);
       }
       break;
@@ -29,34 +42,19 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
   }
 }
 
-void setupWs(AsyncWebServer& server, WsMsgCallback callback)
+StaticTimer_t wsUpkeepTimerBuffer;
+TimerHandle_t wsUpkeepTimerHandle;
+void wsUpkeep(TimerHandle_t timerHandle)
 {
-  wsMsgCallback = callback;
+}
+
+void setupWs(AsyncWebServer& server, WsMsgCallback onMsg, WsConnectCallback onConnect)
+{
+  wsMsgCallback = onMsg;
+  wsConnectCallback = onConnect;
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
+
+  wsUpkeepTimerHandle = xTimerCreateStatic("Ws Upkeep", pdMS_TO_TICKS(1000), pdTRUE, nullptr, &wsUpkeep, &wsUpkeepTimerBuffer);
 }
-
-class AsyncWebSocketMessageBufferInline
-{
-  private:
-    uint8_t* _data;
-    size_t _len;
-    bool _lock; 
-    uint32_t _count;  
-
-  public:
-    AsyncWebSocketMessageBufferInline(uint8_t * data, size_t size)  
-    :_data(data)
-    ,_len(size)
-    ,_lock(false)
-    ,_count(0)
-    {
-
-    }
-    void lock() { _lock = true; }
-    void unlock() { _lock = false; }
-    uint8_t * get() { return _data; }
-    size_t length() { return _len; }
-    uint32_t count() { return _count; }
-};

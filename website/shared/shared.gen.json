@@ -1,0 +1,47 @@
+{
+    "enums": {
+        "Commands": {
+            "_ESP_BEGIN": 0,
+            "ESP_Capture": 0,
+            "ESP_SetDispensingSetting": 1,
+            "ESP_SaveDispensingSettings": 2,
+            "_ESP_END": 3,
+            "_ESP_COUNT": 3,
+            "_ARD_BEGIN": 4,
+            "ARD_Tare": 4,
+            "ARD_ResetTare": 5,
+            "ARD_Weight": 6,
+            "ARD_Dispense": 7,
+            "ARD_SetWheelPosition": 8,
+            "ARD_SetSplitterPosition": 9,
+            "_ARD_END": 10,
+            "_ARD_COUNT": 6
+        },
+        "WheelPosition": {
+            "_BEGIN": 0,
+            "OPEN": 0,
+            "CLOSE_LOOSER": 1,
+            "CLOSE_LOOSE": 2,
+            "CLOSE_TIGHT": 3,
+            "_END": 4,
+            "_COUNT": 4
+        },
+        "SplitterPosition": {
+            "_BEGIN": 0,
+            "LEFT": 0,
+            "RIGHT": 1,
+            "_END": 2,
+            "_COUNT": 2
+        },
+        "DispensingSettings": {
+            "_BEGIN": 0,
+            "Amount": 0,
+            "Time": 1,
+            "_END": 2,
+            "_COUNT": 2
+        }
+    },
+    "constants": {
+        "DispensingEventMax": 4
+    }
+}

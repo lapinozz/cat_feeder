@@ -1,8 +1,10 @@
 @import 'theme';
 
-.camera-img
+.saved-img,
+.stream-img
 {
 	max-width: 40vw;
+	max-height: 35vh;
 	border: 2px gray solid;
 	border-radius: 2px;
 }
@@ -17,4 +19,19 @@
 .connect
 {
 	margin-left: auto;
+}
+
+.root-left
+{
+	width: 40vw;
+}
+
+.dispensing-events-container
+{
+	align-self: auto;
+}
+
+.dispensing-table-Amount input
+{
+	width: 3rem;
 }

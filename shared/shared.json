@@ -3,7 +3,9 @@
   {
     "ESP":
     [
-      "Capture"
+      "Capture",
+      "SetDispensingSetting",
+      "SaveDispensingSettings"
     ],
     "ARD":
     [
@@ -29,6 +31,16 @@
     [
       "LEFT",
       "RIGHT"
+    ],
+    "DispensingSettings":
+    [
+      "Amount",
+      "Time"
     ]
+  },
+
+  "constants":
+  {
+    "DispensingEventMax": 4
   }
 }

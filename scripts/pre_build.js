@@ -84,7 +84,17 @@ for(const e in enums)
 */
 }
 
+const constants = data.constants;
+for(const e in constants)
+{
+  const value = constants[e];
+  output += `const auto ${e} = ${value};\n`;
+}
+
 console.log(output)
+
+const jsonOutput = JSON.stringify({enums, constants}, 4, 4);
+console.log(jsonOutput)
 
 function copyDirSync(src, dest)
 {
@@ -105,8 +115,9 @@ const rootFolder = __dirname + "/..";
 const sharedFolder = rootFolder + "/shared";
 const sharedGenFolder = rootFolder + "/shared.gen";
 
-const esp32Folder = rootFolder + "/esp32/shared";
+const esp32Folder = rootFolder + "/esp32/src/shared";
 const arduinoFolder = rootFolder + "/arduino/shared";
+const websiteFolder = rootFolder + "/website/shared";
 
 if (fs.existsSync(sharedGenFolder))
 {
@@ -115,9 +126,22 @@ if (fs.existsSync(sharedGenFolder))
 copyDirSync(sharedFolder, sharedGenFolder);
 
 fs.writeFileSync(sharedGenFolder + "/shared.gen.h", output);
+fs.writeFileSync(sharedGenFolder + "/shared.gen.json", jsonOutput);
 
+if (fs.existsSync(esp32Folder))
+{
   fs.rmSync(esp32Folder, { recursive: true });
+}
 copyDirSync(sharedGenFolder, esp32Folder);
 
+if (fs.existsSync(arduinoFolder))
+{
   fs.rmSync(arduinoFolder, { recursive: true });
+}
 copyDirSync(sharedGenFolder, arduinoFolder);
+
+if (fs.existsSync(websiteFolder))
+{
+  fs.rmSync(websiteFolder, { recursive: true });
+}
+copyDirSync(sharedGenFolder, websiteFolder);

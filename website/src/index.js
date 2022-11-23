@@ -1,6 +1,8 @@
 import "./style/main.scss";
 
-import sharedH from 'raw-loader!../../shared/shared.h';
+import sharedJson from '../shared/shared.gen.json';
+const {enums, constants} = sharedJson;
+const {Commands} = enums;
 
 import {makeDiv} from "./js/utils.js";
 
@@ -19,14 +21,25 @@ const rootRight = makeDiv({
 	class: 'root-right ut-flex-expand ut-flex-v'
 });
 
-const cameraImg = makeDiv('img', {
+const savedImg = makeDiv('img', {
 	parent: rootLeft,
-	class: 'camera-img'
+	class: 'saved-img',
+	src: "http://cat.lapinozz.com/saved-photo"
+});
+
+const streamImg = makeDiv('img', {
+	parent: rootLeft,
+	class: 'stream-img'
 });
 
 const cameraButtons = makeDiv({
 	parent: rootLeft,
 	class: 'camera-buttons'
+});
+
+const dispensingEventsContainer = makeDiv({
+	parent: rootLeft,
+	class: 'dispensing-events-container ut-flex-h'
 });
 
 const secretContainer = makeDiv({
@@ -89,6 +102,24 @@ secretInput.onchange = () =>
 	localStorage.setItem('secret', secretInput.value);
 };
 
+secretInput.onkeydown = (e) =>
+{
+	if(e.keyCode == 13)
+	{
+		connect();
+	}
+};
+
+commandInput.onkeydown = (e) =>
+{
+	if(e.keyCode == 13)
+	{
+		onCommand();
+	}
+};
+
+commandSend.onclick = onCommand;
+
 function log(str, color)
 {
 	const msg = makeDiv({
@@ -108,15 +139,15 @@ function logLine(str, color)
 
 function logIn(str, color)
 {
-	log('< ' + str + '\n', color);
+	log('> ' + str + '\n', color);
 }
 
 function logOut(str, color)
 {
-	log('> ' + str + '\n', color);
+	log('< ' + str + '\n', color);
 }
 
-console.log({sharedH})
+console.log({sharedJson})
 
 let ws;
 
@@ -130,6 +161,15 @@ function updateConnected()
 }
 updateConnected();
 
+const keepAlive = () =>
+{
+	if(ws)
+	{
+		ws.send("ping");
+	}
+};
+setInterval(keepAlive, 1000);
+
 const connect = () => 
 {
 	if(ws)
@@ -137,10 +177,10 @@ const connect = () =>
 		ws.onclose();
 	}
 
-	const addr = "ws://192.168.0.120/ws/" + secretInput.value
-	ws = new WebSocket(addr);
+	const addr = "ws://home.lapinozz.com:4560/ws/"
+	ws = new WebSocket(addr + secretInput.value);
 
-	logLine('[WS] Conneting to: ' + addr);
+	logLine('[WS] Conneting to: ' + addr + 'XXXXXXXXXXXX');
 
 	connected = false;
 	connecting = true;
@@ -157,8 +197,32 @@ const connect = () =>
 
 	ws.onmessage = function(e)
 	{
-		logIn(e.data);
-		cameraImg.src = URL.createObjectURL(e.data);
+		const {data} = e;
+		if(data instanceof Blob)
+		{
+			URL.revokeObjectURL(streamImg.src);
+			streamImg.src = URL.createObjectURL(e.data);
+		} 
+		else
+		{
+			logIn(e.data);
+			const args = e.data.split(',').map(a => parseInt(a));
+			const cmd = args.splice(0,1);
+
+			if(cmd == Commands.ESP_SetDispensingSetting)
+			{
+				dispensingEvents = [];
+				for(let x = 0; x < constants.DispensingEventMax; x++)
+				{
+					dispensingEvents[x] = [];
+					for(let y = 0; y < enums.DispensingSettings._COUNT; y++)
+					{
+						dispensingEvents[x][y] = args[x * enums.DispensingSettings._COUNT + y];
+					}
+				}
+				updateDispensingEvents();
+			}
+		}
 	};
 
 	ws.onclose = function(e = {})
@@ -178,32 +242,165 @@ const connect = () =>
 	};
 }
 
-secretInput.onkeydown = (e) =>
+let dispensingEvents = [];
+const updateDispensingEvents = () =>
 {
-    if(e.keyCode == 13)
-    {
-        connect();
-    }
+	dispensingEventsContainer.innerHTML = '';
+
+	const table = makeDiv('table', {
+		parent: dispensingEventsContainer,
+		class: 'dispensing-table'
+	});
+
+	const headers = makeDiv('tr', {
+		parent: table
+	});
+
+	makeDiv('td', {
+		parent: headers,
+	});
+
+	const dispensingSettings = Object.keys(enums.DispensingSettings).filter(e => e[0] != '_');
+
+	for(const header of dispensingSettings)
+	{
+		if(header[0] == '_')
+		{
+			continue;
+		}
+
+		const headerEl = makeDiv('td', {
+			parent: headers,
+			class: 'dispensing-table-header-' + header,
+			innerText: header
+		});
+	}
+
+	let localDispensingEvents = [];
+
+	const onChange = () =>
+	{
+		let different = false;
+
+		for(let eventIndex = 0; eventIndex < dispensingEvents.length; eventIndex++)
+		{
+			for(let settingId = 0; settingId < dispensingSettings.length; settingId++)
+			{
+				different = different || (dispensingEvents[eventIndex][settingId] != localDispensingEvents[eventIndex][settingId]);
+			}
+		}
+
+		setButton.classList.toggle('disabled', !different);
+	};
+
+	const set = () =>
+	{
+		for(let eventIndex = 0; eventIndex < dispensingEvents.length; eventIndex++)
+		{
+			for(let settingId = 0; settingId < dispensingSettings.length; settingId++)
+			{
+				const setting = dispensingEvents[eventIndex][settingId];
+				const local = localDispensingEvents[eventIndex][settingId];
+				if(setting != local)
+				{
+					dispensingEvents[eventIndex][settingId] = local;
+					onCommand([Commands.ESP_SetDispensingSetting,eventIndex,settingId,local].join(','));					
+				}
+			}
+		}
+
+		onCommand(Commands.ESP_SaveDispensingSettings);
+
+		onChange()
+	};
+
+	for(let eventIndex = 0; eventIndex < dispensingEvents.length; eventIndex++)
+	{
+		const event = dispensingEvents[eventIndex];
+		localDispensingEvents[eventIndex] = [];
+
+		const row = makeDiv('tr', {
+			parent: table,
+			class: 'dispensing-event-container'
+		});
+
+		const settingContainer = makeDiv('td', {
+			parent: row,
+			class: 'dispensing-setting-container',
+			innerText: `Dispensing ${eventIndex}`
+		});
+
+		for(let settingId = 0; settingId < dispensingSettings.length; settingId++)
+		{
+			const settingValue = event[settingId];
+			localDispensingEvents[eventIndex][settingId] = settingValue;
+
+			const settingContainer = makeDiv('td', {
+				parent: row,
+				class: 'dispensing-setting-container dispensing-table-' + dispensingSettings[settingId],
+			});
+
+			const settingInput = makeDiv('input', {
+				parent: settingContainer,
+				class: 'dispensing-setting-input'
+			});
+
+			if(settingId == enums.DispensingSettings.Time)
+			{
+				settingInput.type = 'time';
+				settingInput.value = new Date(settingValue * 1000).toISOString().substring(11, 16);
+
+				settingInput.onchange = () => {
+					const value = settingInput.value.split(':').reverse().reduce((prev, curr, i) => prev + curr*Math.pow(60, i + 1), 0);
+					localDispensingEvents[eventIndex][settingId] = value;
+					onChange();
+				}
+			}
+			else if(settingId == enums.DispensingSettings.Amount)
+			{
+				settingInput.type = 'number';
+				settingInput.min = 0;
+				settingInput.max = 100;
+				settingInput.value = settingValue;
+
+				makeDiv('span', {
+					parent: settingContainer,
+					innerText: '%',
+					style:'margin:2px'
+				});
+
+				settingInput.onchange = () => {
+					const value = Math.min(100, Math.max(0, parseInt(settingInput.value)));
+					localDispensingEvents[eventIndex][settingId] = value;
+					onChange();
+				}
+			}
+		}
+	}
+
+	const setButton = makeDiv('input', {
+		type: 'button',
+		parent: dispensingEventsContainer,
+		class: 'set-dispensing-events-button',
+		value: 'Set',
+		style: 'height:2rem;align-self:end',
+		onclick: set
+	});
+
+	onChange();
 };
 
 connectButton.onclick = connect;
 connect();
 
-const onCommand = () => 
+const onCommand = (cmd = undefined) => 
 {
-	const command = commandInput.value;
-	commandInput.value = '';
+	if(cmd === undefined)
+	{
+		cmd = commandInput.value;
+		commandInput.value = '';
+	}
 
-	logOut(command);
-	ws.send(command);
+	logOut(cmd);
+	ws.send(cmd);
 };
-
-commandInput.onkeydown = (e) =>
-{
-    if(e.keyCode == 13)
-    {
-        onCommand();
-    }
-};
-
-commandSend.onclick = onCommand;
