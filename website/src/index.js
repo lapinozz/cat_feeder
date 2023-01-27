@@ -8,42 +8,34 @@ import {makeDiv} from "./js/utils.js";
 
 const root = makeDiv({
 	parent: document.body,
-	class: 'root ut-flex-h'
-});
-
-const rootLeft = makeDiv({
-	parent: root,
-	class: 'root-left ut-flex-expand ut-flex-v ut-flex-align-center'
-});
-
-const rootRight = makeDiv({
-	parent: root,
-	class: 'root-right ut-flex-expand ut-flex-v'
+	class: 'root'
 });
 
 const savedImg = makeDiv('img', {
-	parent: rootLeft,
+	parent: root,
 	class: 'saved-img',
 	src: "http://cat.lapinozz.com/saved-photo"
 });
 
 const streamImg = makeDiv('img', {
-	parent: rootLeft,
+	parent: root,
 	class: 'stream-img'
 });
 
+/*
 const cameraButtons = makeDiv({
-	parent: rootLeft,
+	parent: root,
 	class: 'camera-buttons'
 });
+*/
 
 const dispensingEventsContainer = makeDiv({
-	parent: rootLeft,
+	parent: root,
 	class: 'dispensing-events-container ut-flex-h'
 });
 
 const secretContainer = makeDiv({
-	parent: rootRight,
+	parent: root,
 	class: 'secret-container ut-text-input-container'
 });
 
@@ -67,14 +59,14 @@ const connectButton = makeDiv('input', {
 });
 
 const logDiv = makeDiv({
-	parent: rootRight,
+	parent: root,
 	class: 'log ut-readonly ut-flex-expand',
 	readOnly: true,
 	contentEditable: false
 });
 
 const commandContainer = makeDiv({
-	parent: rootRight,
+	parent: root,
 	class: 'command-container ut-text-input-container'
 });
 

@@ -34,8 +34,8 @@ void setupCamera()
   config.pin_pclk = PCLK_GPIO_NUM;
   config.pin_vsync = VSYNC_GPIO_NUM;
   config.pin_href = HREF_GPIO_NUM;
-  config.pin_sscb_sda = SIOD_GPIO_NUM;
-  config.pin_sscb_scl = SIOC_GPIO_NUM;
+  config.pin_sccb_sda = SIOD_GPIO_NUM;
+  config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
@@ -55,7 +55,7 @@ void setupCamera()
   }
 
   sensor_t * s = esp_camera_sensor_get();
-  s->set_brightness(s, -2);     // -2 to 2
+  s->set_brightness(s, 1);     // -2 to 2
   s->set_contrast(s,2);       // -2 to 2
   s->set_saturation(s, 1);     // -2 to 2
   s->set_special_effect(s, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
@@ -65,10 +65,10 @@ void setupCamera()
   s->set_exposure_ctrl(s, 0);  // 0 = disable , 1 = enable
   s->set_aec2(s, 1);           // 0 = disable , 1 = enable
   s->set_ae_level(s, 0);       // -2 to 2
-  s->set_aec_value(s, 400);    // 0 to 1200
+  s->set_aec_value(s, 800);    // 0 to 1200
   s->set_gain_ctrl(s, 1);      // 0 = disable , 1 = enable
-  s->set_agc_gain(s, 0);       // 0 to 30
-  s->set_gainceiling(s, (gainceiling_t)0);  // 0 to 6
+  s->set_agc_gain(s, 15);       // 0 to 30
+  s->set_gainceiling(s, (gainceiling_t)6);  // 0 to 6
   s->set_bpc(s, 0);            // 0 = disable , 1 = enable
   s->set_wpc(s, 1);            // 0 = disable , 1 = enable
   s->set_raw_gma(s, 1);        // 0 = disable , 1 = enable
@@ -79,18 +79,18 @@ void setupCamera()
   s->set_colorbar(s, 0);       // 0 = disable , 1 = enable
 }
 
-bool checkPhoto(fs::FS &fs, const char* path)
+bool checkPhoto(const char* path)
 {
-  File f_pic = fs.open(path);
+  File f_pic = LittleFS.open(path);
   unsigned int pic_sz = f_pic.size();
   return ( pic_sz > 100 );
 }
 
-void capturePhotoSaveSpiffs()
+void capturePhotoSaveSpiffs(const char* path)
 {
   camera_fb_t * fb = NULL;
   bool ok = 0;
-
+  
   do
   {
     Serial.println("Taking a photo...");
@@ -102,8 +102,8 @@ void capturePhotoSaveSpiffs()
       return;
     }
 
-    Serial.printf("Picture file name: %s\n", FILE_PHOTO);
-    File file = SPIFFS.open(FILE_PHOTO, FILE_WRITE);
+    Serial.printf("Picture file name: %s\n", path);
+    File file = LittleFS.open(path, FILE_WRITE);
 
     if (!file)
     {
@@ -111,14 +111,28 @@ void capturePhotoSaveSpiffs()
     }
     else
     {
-      file.write(fb->buf, fb->len);
-      Serial.print("The picture has been saved in ");
-      Serial.print(FILE_PHOTO);
+      for(int x = 0; x < 10; x++)
+      {
+        Serial.print("Writing ");
+        Serial.print(fb->len);
+        Serial.println(" bytes");
+
+        const auto count = file.write(fb->buf, fb->len);
+
+        Serial.print("Wrote ");
+        Serial.print(count);
+        Serial.println(" bytes");
+
+        if(count > 0)
+        {
+          break;
+        }
+      }
     }
 
     file.close();
     esp_camera_fb_return(fb);
 
-    ok = checkPhoto(SPIFFS, FILE_PHOTO);
+    ok = checkPhoto(path);
   } while ( !ok );
 }

@@ -276,8 +276,6 @@ void execDispense(Task& task)
 		weight = executeArduino({Commands::ARD_Weight}).args[0];
 	}
 	while(weight < targetWeight);
-
-	executeArduino({Commands::ARD_SetWheelPosition, WheelPosition::OPEN});
 	/*
 	
   setWheelPosition(WheelPosition::CLOSE_LOOSE);

@@ -4,17 +4,13 @@ struct Commands : public SmartEnum<>
 	const static Commands
 	_ESP_BEGIN,
 	ESP_Capture,
+	ESP_Dispense,
 	ESP_SetDispensingSetting,
 	ESP_SaveDispensingSettings,
 	_ESP_END,
 	_ESP_COUNT,
 	_ARD_BEGIN,
-	ARD_Tare,
-	ARD_ResetTare,
-	ARD_Weight,
 	ARD_Dispense,
-	ARD_SetWheelPosition,
-	ARD_SetSplitterPosition,
 	_ARD_END,
 	_ARD_COUNT;
 };
@@ -22,59 +18,53 @@ struct Commands : public SmartEnum<>
 constexpr const Commands
 	Commands::_ESP_BEGIN{0},
 	Commands::ESP_Capture{0},
-	Commands::ESP_SetDispensingSetting{1},
-	Commands::ESP_SaveDispensingSettings{2},
-	Commands::_ESP_END{3},
-	Commands::_ESP_COUNT{3},
-	Commands::_ARD_BEGIN{4},
-	Commands::ARD_Tare{4},
-	Commands::ARD_ResetTare{5},
-	Commands::ARD_Weight{6},
-	Commands::ARD_Dispense{7},
-	Commands::ARD_SetWheelPosition{8},
-	Commands::ARD_SetSplitterPosition{9},
-	Commands::_ARD_END{10},
-	Commands::_ARD_COUNT{6};
+	Commands::ESP_Dispense{1},
+	Commands::ESP_SetDispensingSetting{2},
+	Commands::ESP_SaveDispensingSettings{3},
+	Commands::_ESP_END{4},
+	Commands::_ESP_COUNT{4},
+	Commands::_ARD_BEGIN{5},
+	Commands::ARD_Dispense{5},
+	Commands::_ARD_END{6},
+	Commands::_ARD_COUNT{1};
 
-struct WheelPosition : public SmartEnum<>
+struct PaddleActions : public SmartEnum<>
 {
-	constexpr WheelPosition(char x = 0) : SmartEnum(x) {}
-	const static WheelPosition
+	constexpr PaddleActions(char x = 0) : SmartEnum(x) {}
+	const static PaddleActions
 	_BEGIN,
-	OPEN,
-	CLOSE_LOOSER,
-	CLOSE_LOOSE,
-	CLOSE_TIGHT,
+	CLOCKWISE,
+	COUNTER_CLOCKWISE,
+	JIGGLE,
 	_END,
 	_COUNT;
 };
 
-constexpr const WheelPosition
-	WheelPosition::_BEGIN{0},
-	WheelPosition::OPEN{0},
-	WheelPosition::CLOSE_LOOSER{1},
-	WheelPosition::CLOSE_LOOSE{2},
-	WheelPosition::CLOSE_TIGHT{3},
-	WheelPosition::_END{4},
-	WheelPosition::_COUNT{4};
+constexpr const PaddleActions
+	PaddleActions::_BEGIN{0},
+	PaddleActions::CLOCKWISE{0},
+	PaddleActions::COUNTER_CLOCKWISE{1},
+	PaddleActions::JIGGLE{2},
+	PaddleActions::_END{3},
+	PaddleActions::_COUNT{3};
 
-struct SplitterPosition : public SmartEnum<>
+struct Lasers : public SmartEnum<>
 {
-	constexpr SplitterPosition(char x = 0) : SmartEnum(x) {}
-	const static SplitterPosition
+	constexpr Lasers(char x = 0) : SmartEnum(x) {}
+	const static Lasers
 	_BEGIN,
-	LEFT,
-	RIGHT,
+	CHUTE,
+	RESERVOIR,
 	_END,
 	_COUNT;
 };
 
-constexpr const SplitterPosition
-	SplitterPosition::_BEGIN{0},
-	SplitterPosition::LEFT{0},
-	SplitterPosition::RIGHT{1},
-	SplitterPosition::_END{2},
-	SplitterPosition::_COUNT{2};
+constexpr const Lasers
+	Lasers::_BEGIN{0},
+	Lasers::CHUTE{0},
+	Lasers::RESERVOIR{1},
+	Lasers::_END{2},
+	Lasers::_COUNT{2};
 
 struct DispensingSettings : public SmartEnum<>
 {
@@ -93,5 +83,47 @@ constexpr const DispensingSettings
 	DispensingSettings::Time{1},
 	DispensingSettings::_END{2},
 	DispensingSettings::_COUNT{2};
+
+struct ShiftOutputs : public SmartEnum<>
+{
+	constexpr ShiftOutputs(char x = 0) : SmartEnum(x) {}
+	const static ShiftOutputs
+	_BEGIN,
+	ChuteLaser,
+	ReservoirLaser,
+	MotorA,
+	MotorB,
+	_END,
+	_COUNT;
+};
+
+constexpr const ShiftOutputs
+	ShiftOutputs::_BEGIN{0},
+	ShiftOutputs::ChuteLaser{0},
+	ShiftOutputs::ReservoirLaser{1},
+	ShiftOutputs::MotorA{2},
+	ShiftOutputs::MotorB{3},
+	ShiftOutputs::_END{4},
+	ShiftOutputs::_COUNT{4};
+
+struct DispensingResult : public SmartEnum<>
+{
+	constexpr DispensingResult(char x = 0) : SmartEnum(x) {}
+	const static DispensingResult
+	_BEGIN,
+	Ok,
+	PaddleStuck,
+	NoOutput,
+	_END,
+	_COUNT;
+};
+
+constexpr const DispensingResult
+	DispensingResult::_BEGIN{0},
+	DispensingResult::Ok{0},
+	DispensingResult::PaddleStuck{1},
+	DispensingResult::NoOutput{2},
+	DispensingResult::_END{3},
+	DispensingResult::_COUNT{3};
 
 const auto DispensingEventMax = 4;

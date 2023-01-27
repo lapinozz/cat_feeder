@@ -3,7 +3,10 @@
   {
     "ESP":
     [
-      "Capture"
+      "Capture",
+      "Dispense",
+      "SetDispensingSetting",
+      "SaveDispensingSettings"
     ],
     "ARD":
     [
@@ -12,7 +15,9 @@
       "Weight",
       "Dispense",
       "SetWheelPosition",
-      "SetSplitterPosition"
+      "SetSplitterPosition",
+      "SetWheelAngle",
+      "SetSplitterAngle"
     ]
   },
 
@@ -29,6 +34,16 @@
     [
       "LEFT",
       "RIGHT"
+    ],
+    "DispensingSettings":
+    [
+      "Amount",
+      "Time"
     ]
+  },
+
+  "constants":
+  {
+    "DispensingEventMax": 4
   }
 }

@@ -1,16 +1,25 @@
 @import 'theme';
 
-.saved-img,
-.stream-img
+.root
 {
-	max-width: 40vw;
-	max-height: 35vh;
-	border: 2px gray solid;
-	border-radius: 2px;
+    display: grid;
+	grid-template-areas: 
+        "saved connect"
+        "saved logs"
+        "stream logs"
+        "dispensing-settings logs"
+        "dispensing-settings commands";
+
+	grid-template-rows: min-content 1fr 1fr min-content min-content;
+
+	grid-template-columns: 1fr 1fr;
+
+	padding: 1rem;
 }
 
 .log
 {
+	grid-area: logs;
 	padding: 2px;  
 	overflow: auto;
   	overflow-y: auto;
@@ -21,6 +30,35 @@
 	margin-left: auto;
 }
 
+.secret-container
+{
+	grid-area: connect;
+}
+
+.saved-img
+{
+	grid-area: saved;
+}
+
+.stream-img
+{
+	grid-area: stream;
+}
+
+.command-container
+{
+	grid-area: commands;
+}
+
+.saved-img,
+.stream-img
+{
+	max-width: 40vw;
+	max-height: 35vh;
+	border: 2px gray solid;
+	border-radius: 2px;
+}
+
 .root-left
 {
 	width: 40vw;
@@ -28,10 +66,37 @@
 
 .dispensing-events-container
 {
+	grid-area: dispensing-settings;
 	align-self: auto;
 }
 
 .dispensing-table-Amount input
 {
 	width: 3rem;
+}
+
+@media only screen and (max-width: 600px) {
+  .root
+	{
+	    display: grid;
+		grid-template-areas: 
+	        "connect"
+	        "saved"
+	        "stream"
+	        "dispensing-settings"
+	        "logs"
+	        "commands";
+
+
+		padding: 0.5rem; 
+
+  		position: relative;
+	}
+
+	.saved-img,
+	.stream-img
+	{
+		max-width: 90vw;
+		max-height: 35vh;
+	}
 }

@@ -4,38 +4,46 @@
     "ESP":
     [
       "Capture",
+      "Dispense",
       "SetDispensingSetting",
       "SaveDispensingSettings"
     ],
     "ARD":
     [
-      "Tare",
-      "ResetTare",
-      "Weight",
-      "Dispense",
-      "SetWheelPosition",
-      "SetSplitterPosition"
+      "Dispense"
     ]
   },
 
   "enums":
   {
-    "WheelPosition":
+    "PaddleActions":
     [
-      "OPEN",
-      "CLOSE_LOOSER",
-      "CLOSE_LOOSE",
-      "CLOSE_TIGHT"
+      "CLOCKWISE",
+      "COUNTER_CLOCKWISE",
+      "JIGGLE"
     ],
-    "SplitterPosition":
+    "Lasers":
     [
-      "LEFT",
-      "RIGHT"
+      "CHUTE",
+      "RESERVOIR"
     ],
     "DispensingSettings":
     [
       "Amount",
       "Time"
+    ],
+    "ShiftOutputs":
+    [
+      "ChuteLaser",
+      "ReservoirLaser",
+      "MotorA",
+      "MotorB"
+    ],
+    "DispensingResult":
+    [
+      "Ok",
+      "PaddleStuck",
+      "NoOutput"
     ]
   },
 
