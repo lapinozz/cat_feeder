@@ -1,7 +1,7 @@
 struct Task {
   Commands cmd;
 
-  inline static constexpr size_t MaxArgCount = 3;
+  inline static constexpr size_t MaxArgCount = 4;
 
   uint8_t argCount = 0;
   int args[MaxArgCount] = {};

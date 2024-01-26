@@ -6,12 +6,17 @@
             "ESP_Dispense": 1,
             "ESP_SetDispensingSetting": 2,
             "ESP_SaveDispensingSettings": 3,
-            "_ESP_END": 4,
-            "_ESP_COUNT": 4,
-            "_ARD_BEGIN": 5,
-            "ARD_Dispense": 5,
-            "_ARD_END": 6,
-            "_ARD_COUNT": 1
+            "ESP_WifiList": 4,
+            "ESP_WifiStatus": 5,
+            "ESP_WifiConnect": 6,
+            "ESP_Temperature": 7,
+            "_ESP_END": 8,
+            "_ESP_COUNT": 8,
+            "_ARD_BEGIN": 9,
+            "ARD_Dispense": 9,
+            "ARD_Reservoir": 10,
+            "_ARD_END": 11,
+            "_ARD_COUNT": 2
         },
         "PaddleActions": {
             "_BEGIN": 0,
@@ -28,12 +33,13 @@
             "_END": 2,
             "_COUNT": 2
         },
-        "DispensingSettings": {
+        "DispensingEventSettings": {
             "_BEGIN": 0,
             "Amount": 0,
             "Time": 1,
-            "_END": 2,
-            "_COUNT": 2
+            "Positions": 2,
+            "_END": 3,
+            "_COUNT": 3
         },
         "ShiftOutputs": {
             "_BEGIN": 0,
@@ -46,14 +52,17 @@
         },
         "DispensingResult": {
             "_BEGIN": 0,
-            "Ok": 0,
-            "PaddleStuck": 1,
+            "Started": 0,
+            "Ok": 1,
             "NoOutput": 2,
-            "_END": 3,
-            "_COUNT": 3
+            "PaddleStuck": 3,
+            "FoodJammed": 4,
+            "_END": 5,
+            "_COUNT": 5
         }
     },
     "constants": {
-        "DispensingEventMax": 4
+        "DispensingEventMax": 4,
+        "PositionCount": 3
     }
 }

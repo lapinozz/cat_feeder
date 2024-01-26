@@ -1,4 +1,4 @@
-struct DiscordMessage
+struct PushoverMessage
 {
   const char* message = nullptr;
   const char* fileName = nullptr;
@@ -6,25 +6,35 @@ struct DiscordMessage
   size_t fileSize = 0;
 };
 
-void sendMsg(const DiscordMessage& msg)
+void sendMsg(const PushoverMessage& msg)
 {
   WiFiClientSecure client;
   client.setInsecure();
   
+  int tryCount = 0;
+
   do
   {
-    if(client.connect("discord.com", 443) == 1)
+    if(client.connect("api.pushover.net", 443) == 1)
     {
       break;
     }
     else
     {
-      Serial.println("Discord connection failed");
+      Serial.println("Pushover connection failed");
       client.stop();
-      return;
+
+      if(tryCount++ > 5)
+      {
+        return;
+      }
+
+      delay(100);
     }
   }
   while(true);
+
+  delay(10);
 
   struct BodyPart
   {
@@ -47,13 +57,26 @@ void sendMsg(const DiscordMessage& msg)
 
   const BodyPart bodyParts[] =
   {
-    {"--AAZBBYCCXDDWEEV\r\n"
-     "Content-Disposition: form-data; name=\"payload_json\"\r\n\r\n"
-     "{\"content\":\""},
-    {message},
-    {"\"}\r\n"
-     "--AAZBBYCCXDDWEEV\r\n"
-     "Content-Disposition: form-data; name=\""}, {fileName}, {"\"; filename=\""}, {fileName}, {"\"\r\n\r\n"},
+    "--AAZBBYCCXDDWEEV\r\n",
+
+     "Content-Disposition: form-data; name=\"token\"\r\n\r\n",
+     __SECRET_PUSHOVER_APP__,
+     "\r\n",
+     "--AAZBBYCCXDDWEEV\r\n",
+
+     "Content-Disposition: form-data; name=\"user\"\r\n\r\n",
+     __SECRET_PUSHOVER_USER__,
+     "\r\n",
+     "--AAZBBYCCXDDWEEV\r\n",
+
+     "Content-Disposition: form-data; name=\"message\"\r\n\r\n",
+     message,
+     "\r\n",
+     "--AAZBBYCCXDDWEEV\r\n",
+
+     "Content-Disposition: form-data; name=\"attachment\"; filename=\"", {fileName}, "\""
+     "Content-Type: image/jpeg\r\n\r\n",
+     
      {msg.fileBuf, msg.fileSize},
      {"\r\n--AAZBBYCCXDDWEEV--\r\n"},
   };
@@ -64,8 +87,8 @@ void sendMsg(const DiscordMessage& msg)
     bodySize += part.len;
   }
   
-  client.print("POST /api/webhooks/" __SECRET_DISCORD_TOKEN__ " HTTP/1.1\r\n"
-               "Host: discord.com\r\n"
+  client.print("POST /1/messages.json HTTP/1.1\r\n"
+               "Host: api.pushover.net\r\n"
                "Content-Type: multipart/form-data; boundary=AAZBBYCCXDDWEEV\r\n"
                "Content-Length: ");
   client.print(bodySize);
@@ -85,7 +108,7 @@ void sendMsg(const DiscordMessage& msg)
     }
   }
 
-  // /*
+ // /*
   Timer t(2000);
 
   uint8_t data = -1;
@@ -100,5 +123,5 @@ void sendMsg(const DiscordMessage& msg)
   {
     Serial.write(data);
   }
-  // */
+  //*/
 }

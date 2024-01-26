@@ -6,11 +6,16 @@
       "Capture",
       "Dispense",
       "SetDispensingSetting",
-      "SaveDispensingSettings"
+      "SaveDispensingSettings",
+      "WifiList",
+      "WifiStatus",
+      "WifiConnect",
+      "Temperature"
     ],
     "ARD":
     [
-      "Dispense"
+      "Dispense",
+      "Reservoir"
     ]
   },
 
@@ -27,10 +32,11 @@
       "CHUTE",
       "RESERVOIR"
     ],
-    "DispensingSettings":
+    "DispensingEventSettings":
     [
       "Amount",
-      "Time"
+      "Time",
+      "Positions"
     ],
     "ShiftOutputs":
     [
@@ -41,14 +47,17 @@
     ],
     "DispensingResult":
     [
+      "Started",
       "Ok",
+      "NoOutput",
       "PaddleStuck",
-      "NoOutput"
+      "FoodJammed"
     ]
   },
 
   "constants":
   {
-    "DispensingEventMax": 4
+    "DispensingEventMax": 4,
+    "PositionCount": 3
   }
 }

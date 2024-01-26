@@ -7,10 +7,15 @@ struct Commands : public SmartEnum<>
 	ESP_Dispense,
 	ESP_SetDispensingSetting,
 	ESP_SaveDispensingSettings,
+	ESP_WifiList,
+	ESP_WifiStatus,
+	ESP_WifiConnect,
+	ESP_Temperature,
 	_ESP_END,
 	_ESP_COUNT,
 	_ARD_BEGIN,
 	ARD_Dispense,
+	ARD_Reservoir,
 	_ARD_END,
 	_ARD_COUNT;
 };
@@ -21,12 +26,17 @@ constexpr const Commands
 	Commands::ESP_Dispense{1},
 	Commands::ESP_SetDispensingSetting{2},
 	Commands::ESP_SaveDispensingSettings{3},
-	Commands::_ESP_END{4},
-	Commands::_ESP_COUNT{4},
-	Commands::_ARD_BEGIN{5},
-	Commands::ARD_Dispense{5},
-	Commands::_ARD_END{6},
-	Commands::_ARD_COUNT{1};
+	Commands::ESP_WifiList{4},
+	Commands::ESP_WifiStatus{5},
+	Commands::ESP_WifiConnect{6},
+	Commands::ESP_Temperature{7},
+	Commands::_ESP_END{8},
+	Commands::_ESP_COUNT{8},
+	Commands::_ARD_BEGIN{9},
+	Commands::ARD_Dispense{9},
+	Commands::ARD_Reservoir{10},
+	Commands::_ARD_END{11},
+	Commands::_ARD_COUNT{2};
 
 struct PaddleActions : public SmartEnum<>
 {
@@ -66,23 +76,25 @@ constexpr const Lasers
 	Lasers::_END{2},
 	Lasers::_COUNT{2};
 
-struct DispensingSettings : public SmartEnum<>
+struct DispensingEventSettings : public SmartEnum<>
 {
-	constexpr DispensingSettings(char x = 0) : SmartEnum(x) {}
-	const static DispensingSettings
+	constexpr DispensingEventSettings(char x = 0) : SmartEnum(x) {}
+	const static DispensingEventSettings
 	_BEGIN,
 	Amount,
 	Time,
+	Positions,
 	_END,
 	_COUNT;
 };
 
-constexpr const DispensingSettings
-	DispensingSettings::_BEGIN{0},
-	DispensingSettings::Amount{0},
-	DispensingSettings::Time{1},
-	DispensingSettings::_END{2},
-	DispensingSettings::_COUNT{2};
+constexpr const DispensingEventSettings
+	DispensingEventSettings::_BEGIN{0},
+	DispensingEventSettings::Amount{0},
+	DispensingEventSettings::Time{1},
+	DispensingEventSettings::Positions{2},
+	DispensingEventSettings::_END{3},
+	DispensingEventSettings::_COUNT{3};
 
 struct ShiftOutputs : public SmartEnum<>
 {
@@ -111,19 +123,24 @@ struct DispensingResult : public SmartEnum<>
 	constexpr DispensingResult(char x = 0) : SmartEnum(x) {}
 	const static DispensingResult
 	_BEGIN,
+	Started,
 	Ok,
-	PaddleStuck,
 	NoOutput,
+	PaddleStuck,
+	FoodJammed,
 	_END,
 	_COUNT;
 };
 
 constexpr const DispensingResult
 	DispensingResult::_BEGIN{0},
-	DispensingResult::Ok{0},
-	DispensingResult::PaddleStuck{1},
+	DispensingResult::Started{0},
+	DispensingResult::Ok{1},
 	DispensingResult::NoOutput{2},
-	DispensingResult::_END{3},
-	DispensingResult::_COUNT{3};
+	DispensingResult::PaddleStuck{3},
+	DispensingResult::FoodJammed{4},
+	DispensingResult::_END{5},
+	DispensingResult::_COUNT{5};
 
 const auto DispensingEventMax = 4;
+const auto PositionCount = 3;

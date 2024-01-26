@@ -1,187 +1,63 @@
 #include "shared/shared.h"
 
 #include <SoftwareSerial.h>
-SoftwareSerial espSerial(8, 9); // RX, TX
+#include <Servo.h>
+
+SoftwareSerial espSerial(6, 7); // RX, TX
 
 Stream* mainSerial = nullptr;
 
-constexpr int paddlePin1 = 5;
-constexpr int paddlePin2 = 6;
-
 constexpr int positionSensorPin = 2;
 
-constexpr int chuteLaserPin = 12;
-constexpr int reservoirLaserPin = A2;
-
+constexpr int chuteLaserPin = A5;
 constexpr int chuteLaserSensorPin = 3;
+
+constexpr int reservoirLaserPin = 4; 
 constexpr int reservoirLaserSensorPin = A4;
 
 volatile bool positionPinLow = false;
 volatile bool chuteSensorTriggered = false;
 
-constexpr int shiftLatchPin = 11;
-constexpr int shiftClockPin = 12;
-constexpr int shiftDataPin = 10;
+constexpr int motorPinA = 11;
+constexpr int motorPinB = 12;
 
-uint8_t shifterOutputs = 0;
+constexpr int servoPin = 9;
+constexpr int servoPositions[PositionCount] = {1, 180 / 2 - 8, 180};
 
-void setShifterOutput(ShiftOutputs output, bool state)
+constexpr auto servoMin = MIN_PULSE_WIDTH + 30;
+constexpr auto servoMax = MAX_PULSE_WIDTH + 120;
+
+Servo servo;
+
+void rotateLeft(int speed = 255)
 {
-  bitWrite(shifterOutputs, output, state);
-
-  Serial.println(shifterOutputs);
-
-  digitalWrite(shiftLatchPin, LOW);
-  shiftOut(shiftDataPin, shiftClockPin, MSBFIRST, shifterOutputs);
-  digitalWrite(shiftLatchPin, HIGH);
+  analogWrite(motorPinA, 255 - speed);
+  digitalWrite(motorPinB, HIGH);
 }
 
-void rotateLeft()
+void rotateRight(int speed = 255)
 {
-  setShifterOutput(ShiftOutputs::MotorA, true);
-  setShifterOutput(ShiftOutputs::MotorB, false);
-}
-
-void rotateRight()
-{
-  setShifterOutput(ShiftOutputs::MotorA, false);
-  setShifterOutput(ShiftOutputs::MotorB, true);
+  analogWrite(motorPinA, speed);
+  digitalWrite(motorPinB, LOW);
 }
 
 void rotateStop()
 {
-  setShifterOutput(ShiftOutputs::MotorA, false);
-  setShifterOutput(ShiftOutputs::MotorB, false);
+  digitalWrite(motorPinA, LOW);
+  digitalWrite(motorPinB, LOW);
 }
 
-struct Laser
-{
-  int laserPin;
-  int sensorPin;
-  int threshold;
-  //bool active = false;
-  bool visible;
-};
-
-Laser chuteLaser = {
-  chuteLaserPin,
-  chuteLaserSensorPin
-};
-
-Laser reservoirLaser = {
-  reservoirLaserPin,
-  reservoirLaserSensorPin
-};
-
-Laser lasers[Lasers::_COUNT] = {chuteLaser, reservoirLaser};
-
-bool updateLaser(Lasers id)
-{
-  Laser& laser = lasers[id];
-
-  digitalWrite(laser.laserPin, HIGH);
-  delay(5);
-
-  //int value = analogRead(laser.sensorPin);
-  int value = digitalRead(laser.sensorPin);
-  Serial.print('0' + id);
-  Serial.print(": ");
-  Serial.println(value);
-  laser.visible = value >= laser.threshold;
-
-  //digitalWrite(laser.laserPin, LOW);
-
-  return laser.visible;
-}
-
-void updateLasers()
-{
-  for(int x = 0; x < Lasers::_COUNT; x++)
+void moveServo(int pos, int waitDelay = 500)
+{      
+  if(pos < 0 || pos > PositionCount)
   {
-    updateLaser(x);
-  }
-}
-
-void movePaddle(PaddleActions action)
-{
-  setShifterOutput(ShiftOutputs::ChuteLaser, true);
-
-  chuteSensorTriggered = false;
-
-  rotateRight();
-
-  DispensingResult result = DispensingResult::Ok;
-
-  int retryCount = 0;
-  auto start = millis();
-  const auto updateTimeout = [&]()
-  {
-    const auto now = millis();
-    if(now - start > 800)
-    {
-      rotateLeft();
-    
-      delay(100);
-
-      rotateRight();
-    
-      delay(100);
-      
-      start = millis();
-
-      retryCount++;
-
-      if(retryCount >= 10)
-      {
-        result = DispensingResult::PaddleStuck;
-      }
-    }
-  };
-
-  int openCount = 0;
-
-  while(result == DispensingResult::Ok)
-  {
-    if(!digitalRead(positionSensorPin))
-    {
-      openCount++;
-    }
-    else
-    {
-      openCount = 0;
-    }
-
-    if(openCount >= 100)
-    {
-      break;
-    }
-    
-    delay(1);
-    
-    updateTimeout();
+    return;
   }
 
-  positionPinLow = false;
-  
-  while(!positionPinLow && result == DispensingResult::Ok)
-  {
-    updateTimeout();
-  }
-
-  rotateLeft();
-  
-  delay(20);
-
-  rotateStop();
-
-  setShifterOutput(ShiftOutputs::ChuteLaser, false);
-
-  if(!chuteSensorTriggered)
-  {
-    result = DispensingResult::NoOutput;
-  }
-
-  Serial.println(result);
+  servo.attach(servoPin, servoMin, servoMax);
+  servo.write(servoPositions[pos]);
+  delay(waitDelay);
+  servo.detach();
 }
 
 void onPositionPinLow()
@@ -194,31 +70,57 @@ void onChuteSensorTriggered()
   chuteSensorTriggered = true;
 }
 
-void setup() {
+bool isReservoirLow()
+{
+    digitalWrite(reservoirLaserPin, LOW);
+    delay(10);
+
+    bool signal = false;
+    for(int x = 0; x < 10; x++)
+    {
+      signal = signal || digitalRead(reservoirLaserSensorPin);
+      delay(1);
+    }
+
+    digitalWrite(reservoirLaserPin, HIGH);
+    
+    return signal;
+}
+
+void setup()
+{
   Serial.begin(57600);
   Serial.println("Hello, world?");
   
   espSerial.begin(9600);
+
   //espSerial.println("Hello, world?");
 
   pinMode(reservoirLaserPin, OUTPUT);
-  pinMode(chuteLaserPin, OUTPUT);
 
-  pinMode(paddlePin1, OUTPUT);
-  pinMode(paddlePin2, OUTPUT);
+  pinMode(chuteLaserPin, OUTPUT);
+  digitalWrite(chuteLaserPin, LOW);
+
+  pinMode(chuteLaserSensorPin, INPUT);
 
   pinMode(positionSensorPin, INPUT);
-  
-  pinMode(shiftDataPin, OUTPUT);
-  pinMode(shiftClockPin, OUTPUT);  
-  pinMode(shiftLatchPin, OUTPUT);
 
-  setShifterOutput(0, 0);
+  pinMode(motorPinA, OUTPUT);
+  pinMode(motorPinB, OUTPUT);
+  
+  rotateStop();
 
   attachInterrupt(digitalPinToInterrupt(positionSensorPin), onPositionPinLow, RISING);
 
   attachInterrupt(digitalPinToInterrupt(chuteLaserSensorPin), onChuteSensorTriggered, FALLING);
-  
+
+  for (int pos = 0; pos < PositionCount; pos++)
+  {
+    moveServo(pos);
+  }
+
+  Serial.println(isReservoirLow() ? "low" : "not low");
+
   while(mainSerial == nullptr)
   {
     if(espSerial.available() > 0)
@@ -230,6 +132,8 @@ void setup() {
       mainSerial = &Serial;
     }
   }
+
+  Serial.println("Connected");
 }
 
 bool waitForInput()
@@ -273,9 +177,159 @@ bool expectInt(long& ret, bool trash = true)
   return true;
 }
 
-void dispense()
+DispensingResult dispense()
 {
-  movePaddle(PaddleActions::CLOCKWISE);
+  DispensingResult result = DispensingResult::Ok;
+    
+  digitalWrite(chuteLaserPin, HIGH);
+  chuteSensorTriggered = false;
+
+  delay(100);
+
+  const auto chuteJammed = !digitalRead(chuteLaserSensorPin);
+  if(chuteJammed)
+  {
+    return DispensingResult::FoodJammed;
+  }
+
+  int retryCount = 0;
+  auto start = millis();
+  const auto updateTimeout = [&]()
+  {
+    const auto now = millis();
+    if(now - start > 4200)
+    {
+      rotateLeft();
+    
+      delay(200);
+
+      rotateRight();
+    
+      delay(200);
+      
+      start = millis();
+
+      retryCount++;
+
+      if(retryCount >= 5)
+      {
+        result = DispensingResult::PaddleStuck;
+      }
+    }
+  };
+
+  int openCount = 0;
+  bool clearedInitialPosition = false;
+  bool inFinalPosition = false;
+  const auto updatePositionDetection = [&]()
+  {
+    if(!clearedInitialPosition)
+    {
+      if(!digitalRead(positionSensorPin))
+      {
+        openCount++;
+      }
+      else
+      {
+        openCount = 0;
+      }
+
+      if(openCount >= 100)
+      {
+        clearedInitialPosition = true;
+        positionPinLow = false;
+      }
+    }
+    else
+    {
+      if(positionPinLow)
+      {
+        inFinalPosition = true;        
+      }
+    }
+  };
+  
+  /*
+  const int movementStepsCount = 4;
+  const int movementStepsDirection[movementStepsCount]  = {1,     1,    -1,    0};
+  const int movementStepsDuration[movementStepsCount]   = {50,    200,   30,   600};
+  const int movementStepsSpeed[movementStepsCount]      = {255,   255/2, 255,  0};
+  */
+  
+  /*
+  const int movementStepsCount = 2;
+  const int movementStepsDirection[movementStepsCount]  = {1,     0};
+  const int movementStepsDuration[movementStepsCount]   = {80,    500};
+  const int movementStepsSpeed[movementStepsCount]      = {255,   0};
+  int currentMovementStep = 0;
+  */
+  
+  const int movementStepsCount = 1;
+  const int movementStepsDirection[movementStepsCount]  = {1};
+  const int movementStepsDuration[movementStepsCount]   = {3000};
+  const int movementStepsSpeed[movementStepsCount]      = {255};
+  int currentMovementStep = 0;
+  
+  auto lastMovementUpdate = millis();
+  const auto updateMovement = [&]()
+  {
+    const auto duration = movementStepsDuration[currentMovementStep];
+
+    const auto now = millis();
+    if(now - lastMovementUpdate > duration)
+    {
+      lastMovementUpdate = now;
+      currentMovementStep++;
+      if(currentMovementStep >= movementStepsCount)
+      {
+        currentMovementStep = 0;
+      }
+    }
+
+    const auto movement = movementStepsDirection[currentMovementStep];
+    const auto speed = movementStepsSpeed[currentMovementStep];
+
+    if(movement == 1)
+    {
+      rotateRight(speed);
+    }
+    else if(movement == -1)
+    {
+      rotateLeft(speed);
+    }
+    else if(movement == 0)
+    {
+      rotateStop();
+    }
+  };
+
+  while(result == DispensingResult::Ok && !inFinalPosition)
+  {
+    delay(1);
+
+    updateTimeout();
+    updatePositionDetection();
+    updateMovement();
+  }
+
+  rotateLeft();
+  
+  delay(20);
+
+  rotateStop();
+  
+  delay(1000);
+
+  if(!chuteSensorTriggered)
+  {
+    result = DispensingResult::NoOutput;
+  }
+
+  digitalWrite(chuteLaserPin, LOW);
+
+  delay(100);
+  
+  return result;
 }
 
 void parseCommands()
@@ -286,15 +340,72 @@ void parseCommands()
     return;
   }
 
-  bool success = true;
-  
   if(c == Commands::ARD_Dispense)
   {
-    mainSerial->println("dispense");
-    dispense();
+    long amount = 0;
+    expectInt(amount);
+
+    long positionsPacked = 0;
+    expectInt(positionsPacked);
+
+    int positions[PositionCount] = {};
+
+    int actualPositionCount = 0;
+    for(int x = 0; x < PositionCount; x++)
+    {
+        if((positionsPacked >> x) & 1)
+        {
+            positions[actualPositionCount++] = x;
+        }
+    }
+    
+    for (int x = 0; x < actualPositionCount - 1; x++)
+    {
+        const auto index = random(0, actualPositionCount - x);
+
+        const auto temp = positions[index];
+        positions[index] = positions[x];
+        positions[x] = temp;
+    }
+
+    mainSerial->print(+Commands::ARD_Dispense);
+    mainSerial->print(" ");
+    mainSerial->println(+DispensingResult::Started);
+
+    DispensingResult errors[3];
+
+    for (int x = 0; x < actualPositionCount; x++)
+    {
+      moveServo(positions[x]);
+
+      for(int y = 0; y < amount; y++)
+      {
+        const auto result = dispense();
+        if(result != DispensingResult::Ok)
+        {
+          const auto errorIndex = result - (DispensingResult::Ok + 1);
+          errors[errorIndex] = errors[errorIndex] + 1;
+        }
+      }
+    }
+
+    mainSerial->print(+Commands::ARD_Dispense);
+    for(int x = 0; x < 3; x++)
+    {
+      mainSerial->print(" ");
+      mainSerial->print(+errors[x]);
+    }
+
+    mainSerial->println("");
   }
-  
-  mainSerial->println("");
+  else if(c == Commands::ARD_Reservoir)
+  {
+    const auto isLow = isReservoirLow();
+
+    mainSerial->print(+Commands::ARD_Reservoir);
+    mainSerial->print(" ");
+    mainSerial->println(isLow ? 0 : 1);
+  }
 }
 
 void loop()

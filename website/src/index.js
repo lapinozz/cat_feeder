@@ -11,14 +11,19 @@ const root = makeDiv({
 	class: 'root'
 });
 
-const savedImg = makeDiv('img', {
+const imgContainer = makeDiv({
 	parent: root,
+	class: 'img-container ut-flex-v'
+});
+
+const savedImg = makeDiv('img', {
+	parent: imgContainer,
 	class: 'saved-img',
 	src: "http://cat.lapinozz.com/saved-photo"
 });
 
 const streamImg = makeDiv('img', {
-	parent: root,
+	parent: imgContainer,
 	class: 'stream-img'
 });
 
@@ -28,6 +33,84 @@ const cameraButtons = makeDiv({
 	class: 'camera-buttons'
 });
 */
+
+const wifiContainer = makeDiv({
+	parent: root,
+	class: 'wifi-container ut-flex-v',
+});
+
+const wifiTop = makeDiv({
+	parent: wifiContainer,
+	class: 'ut-text-input-container wifi-status-bar',
+});
+
+const wifiStatusLabel = makeDiv({
+	parent: wifiTop,
+	class: 'ut-label',
+	text: 'Status: '
+});
+
+const wifiStatus = makeDiv({
+	parent: wifiTop,
+	class: 'ut-label',
+	text: 'Connected'
+});
+
+const wifiListToggle = makeDiv('input', {
+	parent: wifiTop,
+	class: 'connect',
+	type: 'button',
+	value: 'Wifi List',
+	onclick: () => toggleWifiList()
+});
+
+const wifiList = makeDiv({
+	parent: wifiContainer,
+	class: 'wifi-list ut-flex-v ut-flex-expand',
+	contentEditable: 'false',
+});
+
+const wifiSSIDContainer = makeDiv({
+	parent: wifiContainer,
+	class: 'wifi-connect-container ut-text-input-container'
+});
+
+const wifiSSIDLabel = makeDiv({
+	parent: wifiSSIDContainer,
+	class: 'ut-label',
+	text: "SSID"
+});
+
+const wifiSSIDInput = makeDiv('input', {
+	parent: wifiSSIDContainer,
+	//class: 'secret-input',
+	//type: 'password'
+});
+
+const wifiPasswordContainer = makeDiv({
+	parent: wifiContainer,
+	class: 'wifi-connect-container ut-text-input-container'
+});
+
+const wifiPasswordLabel = makeDiv({
+	parent: wifiPasswordContainer,
+	class: 'ut-label',
+	text: "Password"
+});
+
+const wifiPasswordInput = makeDiv('input', {
+	parent: wifiPasswordContainer,
+	//class: 'secret-input',
+	type: 'password'
+});
+
+const wifiConnectButton = makeDiv('input', {
+	parent: wifiPasswordContainer,
+	class: 'connect',
+	type: 'button',
+	value: "Connect",
+	onclick: () => wifiConnect()
+});
 
 const dispensingEventsContainer = makeDiv({
 	parent: root,
@@ -110,7 +193,7 @@ commandInput.onkeydown = (e) =>
 	}
 };
 
-commandSend.onclick = onCommand;
+commandSend.onclick = () => onCommand();
 
 function log(str, color)
 {
@@ -160,7 +243,7 @@ const keepAlive = () =>
 		ws.send("ping");
 	}
 };
-setInterval(keepAlive, 1000);
+setInterval(keepAlive, 2000);
 
 const connect = () => 
 {
@@ -169,7 +252,14 @@ const connect = () =>
 		ws.onclose();
 	}
 
-	const addr = "ws://home.lapinozz.com:4560/ws/"
+	//const addr = "ws://home.lapinozz.com:4560/ws/"
+	let addr = "ws://" + window.location.host + window.location.pathname + "ws/";
+	
+	if(window.webpackChunkwebpack_template)
+	{
+		addr = "ws://home.lapinozz.com:4560/ws/";
+	}
+
 	ws = new WebSocket(addr + secretInput.value);
 
 	logLine('[WS] Conneting to: ' + addr + 'XXXXXXXXXXXX');
@@ -199,7 +289,7 @@ const connect = () =>
 		{
 			logIn(e.data);
 			const args = e.data.split(',').map(a => parseInt(a));
-			const cmd = args.splice(0,1);
+			const cmd = args.splice(0,1)[0];
 
 			if(cmd == Commands.ESP_SetDispensingSetting)
 			{
@@ -207,12 +297,17 @@ const connect = () =>
 				for(let x = 0; x < constants.DispensingEventMax; x++)
 				{
 					dispensingEvents[x] = [];
-					for(let y = 0; y < enums.DispensingSettings._COUNT; y++)
+					for(let y = 0; y < enums.DispensingEventSettings._COUNT; y++)
 					{
-						dispensingEvents[x][y] = args[x * enums.DispensingSettings._COUNT + y];
+						dispensingEvents[x][y] = args[x * enums.DispensingEventSettings._COUNT + y];
 					}
 				}
 				updateDispensingEvents();
+			}
+			else if(cmd == Commands.ESP_WifiList)
+			{
+				wifis = e.data.split(',').slice(1).join('').split('+').map(w => w.split('$'));
+				updateWifiList();
 			}
 		}
 	};
@@ -252,7 +347,7 @@ const updateDispensingEvents = () =>
 		parent: headers,
 	});
 
-	const dispensingSettings = Object.keys(enums.DispensingSettings).filter(e => e[0] != '_');
+	const dispensingSettings = Object.keys(enums.DispensingEventSettings).filter(e => e[0] != '_');
 
 	for(const header of dispensingSettings)
 	{
@@ -319,7 +414,7 @@ const updateDispensingEvents = () =>
 		const settingContainer = makeDiv('td', {
 			parent: row,
 			class: 'dispensing-setting-container',
-			innerText: `Dispensing ${eventIndex}`
+			//innerText: `Dispensing ${eventIndex}`
 		});
 
 		for(let settingId = 0; settingId < dispensingSettings.length; settingId++)
@@ -337,7 +432,7 @@ const updateDispensingEvents = () =>
 				class: 'dispensing-setting-input'
 			});
 
-			if(settingId == enums.DispensingSettings.Time)
+			if(settingId == enums.DispensingEventSettings.Time)
 			{
 				settingInput.type = 'time';
 				settingInput.value = new Date(settingValue * 1000).toISOString().substring(11, 16);
@@ -348,18 +443,12 @@ const updateDispensingEvents = () =>
 					onChange();
 				}
 			}
-			else if(settingId == enums.DispensingSettings.Amount)
+			else if(settingId == enums.DispensingEventSettings.Amount)
 			{
 				settingInput.type = 'number';
 				settingInput.min = 0;
-				settingInput.max = 100;
+				settingInput.max = 5;
 				settingInput.value = settingValue;
-
-				makeDiv('span', {
-					parent: settingContainer,
-					innerText: '%',
-					style:'margin:2px'
-				});
 
 				settingInput.onchange = () => {
 					const value = Math.min(100, Math.max(0, parseInt(settingInput.value)));
@@ -367,19 +456,118 @@ const updateDispensingEvents = () =>
 					onChange();
 				}
 			}
+			else if(settingId == enums.DispensingEventSettings.Positions)
+			{
+				settingInput.remove();
+
+				let checkboxs = [];
+
+				const onCheckboxChange = () =>
+				{
+					let value = 0;
+					
+					for(const checkbox of checkboxs)
+					{
+						value = value << 1;
+
+						if(checkbox.checked)
+						{
+							value += 1;
+						}
+					}
+
+					localDispensingEvents[eventIndex][settingId] = value;
+
+					onChange();
+				};
+
+				for(let x = 0; x < constants.PositionCount; x++)
+				{
+					let checkbox = makeDiv('input', {
+						parent: settingContainer,
+						class: 'dispensing-setting-input',
+						type: 'checkbox',
+						checked: (settingValue >> x) & 1
+					});
+
+					checkbox.onchange = onCheckboxChange;
+
+					checkboxs.push(checkbox);
+				}
+			}
 		}
 	}
 
+	const dispensingButtons = makeDiv({
+		parent: dispensingEventsContainer,
+		class: 'ut-flex-v',
+		style: 'align-self:end',
+	});
+
 	const setButton = makeDiv('input', {
 		type: 'button',
-		parent: dispensingEventsContainer,
+		parent: dispensingButtons,
 		class: 'set-dispensing-events-button',
-		value: 'Set',
-		style: 'height:2rem;align-self:end',
+		value: 'Save',
 		onclick: set
 	});
 
+	const dispenseButton = makeDiv('input', {
+		type: 'button',
+		parent: dispensingButtons,
+		class: 'set-dispensing-events-button',
+		value: 'Dispense',
+		onclick: () => 	onCommand([Commands.ARD_Dispense, 1, 1].join(','))
+	});
+
 	onChange();
+};
+
+let wifis = [];
+const updateWifiList = () =>
+{
+	wifiList.innerHTML = '';
+
+	for(const wifi of wifis)
+	{
+		const [locked, ssid, rssi] = wifi;
+		let div = makeDiv({
+			parent: wifiList,
+			class: 'wifi-element',
+			text: ssid
+		});
+
+		div.onclick = () =>
+		{
+			wifiSSIDInput.value = ssid;
+		};
+	}
+};
+
+const toggleWifiList = () =>
+{
+	wifiList.innerHTML = '';
+
+	makeDiv({
+		parent: wifiList,
+		class: 'wifi-spinner spinner',
+	});
+	
+	root.classList.toggle('wifi-open');
+	if(root.classList.contains('wifi-open'))
+	{
+		onCommand([Commands.ESP_WifiList].join(','));
+	}
+};
+
+const wifiConnect = () =>
+{
+	const SSID = wifiSSIDInput.value;
+	const password = wifiPasswordInput.value;
+
+	onCommand(Commands.ESP_WifiConnect + ',' + SSID + '$' + password);
+
+	toggleWifiList();
 };
 
 connectButton.onclick = connect;
@@ -396,3 +584,8 @@ const onCommand = (cmd = undefined) =>
 	logOut(cmd);
 	ws.send(cmd);
 };
+
+setInterval(() =>
+{
+	onCommand('7');
+}, 1000);

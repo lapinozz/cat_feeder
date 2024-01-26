@@ -1,24 +1,32 @@
-bool setClock()
+void initClock()
 {
   const auto gmtOffset = -18000;
   const auto daylightOffset = 3600;
   configTime(gmtOffset, daylightOffset, "pool.ntp.org");
+}
 
-  Serial.print(F("Waiting for NTP time sync: "));
+bool checkClock(bool wait = true)
+{
   time_t nowSecs = time(nullptr);
 
-  int tries = 0;
-
-  while (nowSecs < 8 * 3600 * 2)
+  if(wait && nowSecs < 8 * 3600 * 2)
   {
-    delay(500);
-    Serial.print(F("."));
-    yield();
-    nowSecs = time(nullptr);
+    Serial.print(F("Waiting for NTP time sync: "));
+    time_t nowSecs = time(nullptr);
 
-    if(tries++ >= 10)
+    int tries = 0;
+
+    while (nowSecs < 8 * 3600 * 2)
     {
-      break;
+      delay(500);
+      Serial.print(F("."));
+      yield();
+      nowSecs = time(nullptr);
+
+      if(tries++ >= 10)
+      {
+        break;
+      }
     }
   }
 
@@ -116,7 +124,7 @@ public:
   }
 };
 
-int splitStr(const char* s, int* buf, int bufLen)
+int splitStr(const char* s, int* buf, int bufLen, char separator = ',')
 {
 	FixedString<256> str(s);
 	size_t start = 0;
@@ -124,7 +132,7 @@ int splitStr(const char* s, int* buf, int bufLen)
 
 	while(start >= 0 && start < str.length() && index < bufLen)
 	{
-		size_t end = str.indexOf(',', start);
+		size_t end = str.indexOf(separator, start);
 		if(end == -1)
 		{
 			end = str.length();

@@ -2,19 +2,25 @@
 
 .root
 {
-    display: grid;
+  display: grid;
 	grid-template-areas: 
-        "saved connect"
-        "saved logs"
-        "stream logs"
+        "wifi connect"
+        "wifi logs"
+        "images logs"
         "dispensing-settings logs"
         "dispensing-settings commands";
 
-	grid-template-rows: min-content 1fr 1fr min-content min-content;
+	grid-template-rows: min-content 0 1fr min-content min-content;
 
 	grid-template-columns: 1fr 1fr;
 
 	padding: 1rem;
+	position: absolute;
+
+	&.wifi-open
+	{	
+		grid-template-rows: min-content minmax(0, 1fr) min-content min-content;
+	}
 }
 
 .log
@@ -22,7 +28,7 @@
 	grid-area: logs;
 	padding: 2px;  
 	overflow: auto;
-  	overflow-y: auto;
+  overflow-y: auto;
 }
 
 .connect
@@ -35,14 +41,19 @@
 	grid-area: connect;
 }
 
-.saved-img
+.img-container
 {
-	grid-area: saved;
-}
+	grid-area: images;
 
-.stream-img
-{
-	grid-area: stream;
+	.saved-img
+	{
+		grid-area: saved;
+	}
+
+	.stream-img
+	{
+		grid-area: stream;
+	}
 }
 
 .command-container
@@ -53,15 +64,10 @@
 .saved-img,
 .stream-img
 {
-	max-width: 40vw;
 	max-height: 35vh;
 	border: 2px gray solid;
 	border-radius: 2px;
-}
-
-.root-left
-{
-	width: 40vw;
+  object-fit: contain;
 }
 
 .dispensing-events-container
@@ -75,28 +81,119 @@
 	width: 3rem;
 }
 
+.wifi-container
+{
+	grid-area: wifi;
+
+	.wifi-status-bar
+	{
+		padding: 0;
+  	margin: 0;
+	}
+
+	.wifi-list
+	{
+		overflow-y: auto;
+		padding: 0;
+
+		.wifi-element
+		{
+			margin: 0;
+			padding: 0.2rem;
+			cursor: pointer;
+
+			&:hover, &.selected
+			{
+				background: rgba(255, 255, 255, 0.2);
+			}
+		}
+
+		.wifi-spinner::before
+		{
+			width: 40px;
+			height: 40px;
+		}
+	}
+
+	.wifi-connect-container
+	{
+		margin: 0;
+		padding: 0;
+	}
+}
+
+.root
+{
+	&.wifi-open
+	{
+		> :not(.wifi-container)
+		{
+			display: none;
+		}
+	}
+
+	&:not(.wifi-open)
+	{
+		.wifi-list,
+		.wifi-connect-container
+		{
+			display: none;
+		}
+	}
+}
+
 @media only screen and (max-width: 600px) {
   .root
 	{
-	    display: grid;
+		padding: 0.5rem;
+   	display: grid;
+
 		grid-template-areas: 
+	        "wifi"
 	        "connect"
-	        "saved"
-	        "stream"
+	        "images"
 	        "dispensing-settings"
 	        "logs"
 	        "commands";
 
+		grid-template-rows: min-content min-content minmax(0, min-content) min-content minmax(0, 1fr) min-content;
+		grid-template-columns: 1fr;
 
-		padding: 0.5rem; 
-
-  		position: relative;
+		&.wifi-open
+		{	
+			grid-template-rows: minmax(0, 1fr) min-content min-content min-content minmax(0, min-content) min-content;
+		}
 	}
 
 	.saved-img,
 	.stream-img
 	{
-		max-width: 90vw;
-		max-height: 35vh;
+		max-height: 25vh;
 	}
+}
+
+@keyframes spinner
+{
+  to
+  {
+  	transform: rotate(360deg);
+  }
+}
+ 
+.spinner:before
+{
+  content: '';
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: $accent;
+  border-bottom-color: $accent;
+  animation: spinner .8s ease infinite;
 }

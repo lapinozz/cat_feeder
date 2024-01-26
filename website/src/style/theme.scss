@@ -130,6 +130,10 @@ input, [contenteditable]
 	left: 0;
 	right: 0;
 	bottom: 0;
+}
+
+html
+{
 	color: $primary-text;
 	background: $primary-bg;
 }

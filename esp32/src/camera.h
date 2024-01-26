@@ -17,8 +17,44 @@
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-void setupCamera()
+enum class CameraSetting
 {
+  Deinit,
+  Default,
+  LowRes,
+  HighRes,
+};
+
+extern "C"
+{
+  esp_err_t xclk_timer_conf(int ledc_timer, int xclk_freq_hz);
+  esp_err_t camera_enable_out_clock(const camera_config_t *config);
+  void camera_disable_out_clock(void);
+}
+
+CameraSetting _lastCamSetting = CameraSetting::Deinit;
+void setupCamera(CameraSetting settingType = CameraSetting::Default)
+{
+  if(_lastCamSetting == settingType)
+  {
+    return;
+  }
+
+  esp_camera_deinit();
+
+  _lastCamSetting = settingType;
+
+  if(settingType == CameraSetting::Deinit)
+  {
+    camera_disable_out_clock();
+    digitalWrite(PWDN_GPIO_NUM, 1);
+    return;
+  }
+  else
+  {
+    digitalWrite(PWDN_GPIO_NUM, 0);
+  }
+  
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -44,17 +80,30 @@ void setupCamera()
   //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 6;
+  config.jpeg_quality = 10;
   config.fb_count = 1;
 
+  if(settingType == CameraSetting::LowRes)
+  {
+    config.frame_size = FRAMESIZE_SVGA;
+    config.jpeg_quality = 10;
+  }
+  else if(settingType == CameraSetting::HighRes)
+  {
+    config.grab_mode = CAMERA_GRAB_LATEST;
+    config.frame_size = FRAMESIZE_SXGA;
+    config.jpeg_quality = 6;
+  }
+
   // camera init
+  
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
     Serial.printf("Camera init failed with error 0x%x", err);
     return;
   }
 
-  sensor_t * s = esp_camera_sensor_get();
+  sensor_t* s = esp_camera_sensor_get();
   s->set_brightness(s, 1);     // -2 to 2
   s->set_contrast(s,2);       // -2 to 2
   s->set_saturation(s, 1);     // -2 to 2
@@ -77,6 +126,11 @@ void setupCamera()
   s->set_vflip(s, 0);          // 0 = disable , 1 = enable
   s->set_dcw(s, 1);            // 0 = disable , 1 = enable
   s->set_colorbar(s, 0);       // 0 = disable , 1 = enable
+	
+	if (const auto fb = esp_camera_fb_get())
+	{
+	  esp_camera_fb_return(fb);
+	}
 }
 
 bool checkPhoto(const char* path)
@@ -135,4 +189,48 @@ void capturePhotoSaveSpiffs(const char* path)
 
     ok = checkPhoto(path);
   } while ( !ok );
+}
+
+uint8_t* lastCatpure = nullptr;
+size_t lastCatpureLen = -1;
+
+void capture()
+{
+	if(lastCatpure)
+	{
+		delete[] lastCatpure;
+		lastCatpureLen = -1;
+	}
+
+	setupCamera(CameraSetting::HighRes);
+
+	digitalWrite(4, HIGH);
+	delay(10);
+
+	if (const auto fb = esp_camera_fb_get())
+	{
+	  esp_camera_fb_return(fb);
+	}
+
+	auto* fb = esp_camera_fb_get();
+	digitalWrite(4, LOW);
+
+	if (fb)
+	{
+		if(lastCatpure = new uint8_t[fb->len])
+		{
+			lastCatpureLen = fb->len;
+			memcpy(lastCatpure, fb->buf, lastCatpureLen);
+		}
+		else
+		{
+			Serial.println("Camera buffer allocation failed");
+		}
+	}
+	else
+	{
+		Serial.println("Capture Camera capture failed");
+	}
+
+	esp_camera_fb_return(fb);
 }

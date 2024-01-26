@@ -1,6 +1,6 @@
 #include "AsyncTCP.h"
 
-AsyncWebSocket ws("/ws/" __SECRET__);
+AsyncWebSocket ws("/ws/" __SECRET_WS__);
 
 using WsMsgCallback = void (*)(uint32_t, const char*);
 WsMsgCallback wsMsgCallback = nullptr;
