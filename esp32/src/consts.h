@@ -1,5 +1,5 @@
 const char* ssid = "Dunder MiffLAN";
-const char* password = "***REMOVED***";
+const char* password = "REDACTED";
 
 constexpr const char* configSSID = "Cat Feeder (config)";
 
