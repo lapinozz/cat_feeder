@@ -146,6 +146,8 @@ void execWifiConnect(const char* msg)
 
 void initWifi()
 {
+	esp_phy_erase_cal_data_in_nvs();
+
 	//WiFi.onEvent(onWifiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
 	WiFi.onEvent(onWifiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
 	WiFi.onEvent(onWifiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
@@ -156,8 +158,6 @@ void initWifi()
 
 	delay(500);
 
-	//WiFi.begin(ssid, password);
-	//WiFi.begin("test", "testtest");
 	WiFi.begin();
 
 	delay(500);
