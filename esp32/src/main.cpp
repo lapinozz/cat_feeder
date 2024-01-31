@@ -52,15 +52,15 @@ AsyncWebServer server(4560);
 
 TaskResult executeArduino(const Task& task)
 {
-	Serial2.print(+task.cmd);
+	Serial1.print(+task.cmd);
 
 	for(size_t x = 0; x < task.argCount; x++)
 	{
-		Serial2.print(",");
-		Serial2.print(+task.args[x]);
+		Serial1.print(",");
+		Serial1.print(+task.args[x]);
 	}
 
-	Serial2.print('\n');
+	Serial1.print('\n');
 
 	return {};
 }
@@ -83,9 +83,9 @@ void onArduinoMsg(const TaskResult& result)
 FixedString<256> arduinoBuffer;
 void updateArduino()
 {
-	while (Serial2.available())
+	while (Serial1.available())
 	{
-		arduinoBuffer += (char)Serial2.read();
+		arduinoBuffer += (char)Serial1.read();
 	}
 
 	const auto endIndex = arduinoBuffer.indexOf('\n');
@@ -195,10 +195,11 @@ void streamCamera()
 
 	buffer->reserve(fb->len);
 	memcpy(buffer->get(), fb->buf, fb->len);
-
-	ws.binaryAll(buffer);
 	
 	esp_camera_fb_return(fb);
+	setupCamera(CameraSetting::Deinit);
+
+	ws.binaryAll(buffer);
 }
 
 void noopTask(Task& task) {}
@@ -223,8 +224,8 @@ void setup()
 	WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 	
 	esp_pm_config_esp32_t pmConfig;
-	pmConfig.max_freq_mhz = 160; // 80, 160, 240 
-	pmConfig.min_freq_mhz = 160;
+	pmConfig.max_freq_mhz = 240; // 80, 160, 240 
+	pmConfig.min_freq_mhz = 240;
 	pmConfig.light_sleep_enable = false;
 	esp_pm_configure(&pmConfig);
 
@@ -235,7 +236,7 @@ void setup()
 
 	pinMode(4, OUTPUT);
 
-	setupCamera();
+	setupCamera(CameraSetting::LowRes);
 
     Task task;
     execCapture(task);
@@ -278,7 +279,8 @@ void setup()
 	server.begin();
 	Serial.println("Server Started");
 
-	Serial2.begin(9600, SERIAL_8N1, 14, 15);
+	Serial1.begin(9600, SERIAL_8N1, 14, 15);
+	//Serial1.begin(9600, SERIAL_8N1, 2, 15);
 }
 
 void loop()

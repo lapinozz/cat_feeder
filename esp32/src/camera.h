@@ -202,7 +202,7 @@ void capture()
 		lastCatpureLen = -1;
 	}
 
-	setupCamera(CameraSetting::HighRes);
+	setupCamera(CameraSetting::LowRes);
 
 	digitalWrite(4, HIGH);
 	delay(10);
@@ -233,4 +233,6 @@ void capture()
 	}
 
 	esp_camera_fb_return(fb);
+
+	setupCamera(CameraSetting::Deinit);
 }
